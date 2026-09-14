@@ -1,0 +1,57 @@
+{
+  "name": "tiptap-extension-vim",
+  "version": "0.1.0",
+  "description": "Vim modal editing extension for Tiptap and ProseMirror",
+  "license": "MIT",
+  "author": "quadsteel",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./style.css": "./dist/vim.css"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quadsteel/tiptap-vim.git"
+  },
+  "homepage": "https://github.com/quadsteel/tiptap-vim#readme",
+  "bugs": {
+    "url": "https://github.com/quadsteel/tiptap-vim/issues"
+  },
+  "keywords": [
+    "tiptap",
+    "tiptap-extension",
+    "vim",
+    "prosemirror",
+    "rich-text",
+    "editor",
+    "modal-editing"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean && node -e \"require('fs').copyFileSync('src/ui/vim.css', 'dist/vim.css')\"",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@tiptap/core": "^2.0.0 || ^3.0.0",
+    "@tiptap/pm": "^2.0.0 || ^3.0.0"
+  },
+  "devDependencies": {
+    "@tiptap/core": "^2.11.5",
+    "@tiptap/pm": "^2.11.5",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5",
+    "vitest": "^5.0.0"
+  }
+}

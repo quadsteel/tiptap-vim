@@ -1,0 +1,31 @@
+/* Vim Extension Styles */
+
+/* Hide native browser caret in normal and visual modes */
+[data-vim-mode="normal"] .ProseMirror,
+[data-vim-mode="visual"] .ProseMirror,
+[data-vim-mode="visual-line"] .ProseMirror {
+  caret-color: transparent !important;
+}
+
+/* Vim normal mode block cursor */
+.vim-cursor-block {
+  background-color: var(--vim-cursor-bg, #60a5fa);
+  color: var(--vim-cursor-fg, #0f172a) !important;
+  border-radius: 1px;
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.4);
+}
+
+.vim-cursor-empty {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.15em;
+  vertical-align: text-bottom;
+  background-color: var(--vim-cursor-bg, #60a5fa);
+}
+
+/* Visual selection styling enhancements */
+[data-vim-mode="visual"] .ProseMirror-selectednode,
+[data-vim-mode="visual"] ::selection,
+[data-vim-mode="visual-line"] ::selection {
+  background-color: rgba(99, 102, 241, 0.35) !important;
+}

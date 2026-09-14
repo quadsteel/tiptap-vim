@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tiptap Vim Extension Playground</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="app">
+      <header class="app-header">
+        <div class="logo-group">
+          <span class="vim-tag">VIM</span>
+          <h1>Tiptap Vim Bindings</h1>
+          <span class="version-badge">v0.1.0</span>
+        </div>
+        <div class="header-controls">
+          <button id="btn-reset" class="btn btn-secondary">Reset Sample Text</button>
+          <button id="btn-focus" class="btn btn-primary">Focus Editor</button>
+        </div>
+      </header>
+
+      <main class="playground-layout">
+        <div class="editor-section">
+          <div class="editor-container" id="editor-container"></div>
+
+          <div class="vim-status-bar" id="status-bar">
+            <div class="status-left">
+              <span id="mode-badge" class="mode-badge mode-normal">-- NORMAL --</span>
+              <span id="key-buffer" class="key-buffer"></span>
+              <span id="register-info" class="register-info"></span>
+            </div>
+            <div class="status-right">
+              <span id="pos-info" class="pos-info">Ln 1, Col 1</span>
+              <span id="doc-stats" class="doc-stats"></span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="cheatsheet-sidebar">
+          <h2>Vim Cheatsheet</h2>
+
+          <div class="cheat-group">
+            <h3>Modes</h3>
+            <ul>
+              <li><kbd>i</kbd> Insert at cursor</li>
+              <li><kbd>a</kbd> Insert after cursor</li>
+              <li><kbd>I</kbd> Insert at line start (^)</li>
+              <li><kbd>A</kbd> Insert at line end ($)</li>
+              <li><kbd>o</kbd> Open line below</li>
+              <li><kbd>O</kbd> Open line above</li>
+              <li><kbd>Esc</kbd> / <kbd>Ctrl-[</kbd> Normal mode</li>
+              <li><kbd>v</kbd> Visual character mode</li>
+              <li><kbd>V</kbd> Visual line mode</li>
+            </ul>
+          </div>
+
+          <div class="cheat-group">
+            <h3>Motions</h3>
+            <ul>
+              <li><kbd>h</kbd> <kbd>j</kbd> <kbd>k</kbd> <kbd>l</kbd> Left, down, up, right</li>
+              <li><kbd>w</kbd> <kbd>b</kbd> <kbd>e</kbd> Word start/back/end</li>
+              <li><kbd>W</kbd> <kbd>B</kbd> <kbd>E</kbd> Big WORD start/back/end</li>
+              <li><kbd>f</kbd> / <kbd>F</kbd> Find char forward / back</li>
+              <li><kbd>t</kbd> / <kbd>T</kbd> Till char forward / back</li>
+              <li><kbd>;</kbd> / <kbd>,</kbd> Repeat find / reverse</li>
+              <li><kbd>%</kbd> Match pair (<code>()</code>, <code>{}</code>, <code>[]</code>)</li>
+              <li><kbd>{</kbd> / <kbd>}</kbd> Paragraph up / down</li>
+              <li><kbd>0</kbd> / <kbd>^</kbd> / <kbd>_</kbd> / <kbd>$</kbd> Line start / non-blank / end</li>
+              <li><kbd>gg</kbd> / <kbd>G</kbd> Document start / end</li>
+              <li><kbd>[count]</kbd> Prefix (e.g. <code>3w</code>, <code>5j</code>)</li>
+            </ul>
+          </div>
+
+          <div class="cheat-group">
+            <h3>Operators & Actions</h3>
+            <ul>
+              <li><kbd>x</kbd> Delete character</li>
+              <li><kbd>r{char}</kbd> Replace single char</li>
+              <li><kbd>dd</kbd> Delete line</li>
+              <li><kbd>d{motion}</kbd> Delete motion (e.g. <code>dw</code>, <code>d$</code>)</li>
+              <li><kbd>cc</kbd> Change line</li>
+              <li><kbd>c{motion}</kbd> Change motion (e.g. <code>cw</code>)</li>
+              <li><kbd>yy</kbd> Yank line</li>
+              <li><kbd>y{motion}</kbd> Yank motion</li>
+              <li><kbd>p</kbd> / <kbd>P</kbd> Paste after / before</li>
+              <li><kbd>u</kbd> Undo</li>
+              <li><kbd>Ctrl-r</kbd> Redo</li>
+            </ul>
+          </div>
+        </aside>
+      </main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

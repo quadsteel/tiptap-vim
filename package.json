@@ -1,0 +1,15 @@
+{
+  "name": "tiptap-vim-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/extension",
+    "playground"
+  ],
+  "scripts": {
+    "dev": "npm --workspace=playground run dev",
+    "build": "npm --workspace=packages/extension run build",
+    "build:all": "npm run build --workspaces",
+    "test": "npm --workspace=packages/extension run test",
+    "clean": "npm run clean --workspaces --if-present"
+  }
+}
