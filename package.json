@@ -11,5 +11,6 @@
     "build:all": "npm run build --workspaces",
     "test": "npm --workspace=packages/extension run test",
     "clean": "npm run clean --workspaces --if-present"
-  }
+  },
+  "version": "0.0.1"
 }
