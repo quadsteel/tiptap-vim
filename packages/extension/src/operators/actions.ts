@@ -278,25 +278,40 @@ export function enterInsert(ctx: CommandContext, variation: 'i' | 'a' | 'I' | 'A
  * Exit to normal mode (<Esc>)
  */
 export function exitToNormal(ctx: CommandContext) {
-  const { state, dispatch, updateVimState, resetBuffer } = ctx
-  const $pos = state.selection.$from
-  let targetPos = state.selection.from
+  const { state, dispatch, vimState, updateVimState, resetBuffer } = ctx
 
-  if ($pos.parent.isTextblock) {
-    const textLen = $pos.parent.textContent.length
-    if (textLen > 0) {
-      if ($pos.parentOffset >= textLen) {
-        targetPos = $pos.start() + textLen - 1
-      } else if ($pos.parentOffset > 0) {
-        targetPos = Math.max($pos.start(), targetPos - 1)
+  if (vimState.mode === 'insert') {
+    const $pos = state.selection.$from
+    let targetPos = state.selection.from
+
+    if ($pos.parent.isTextblock) {
+      const textLen = $pos.parent.textContent.length
+      if (textLen > 0) {
+        if ($pos.parentOffset >= textLen) {
+          targetPos = $pos.start() + textLen - 1
+        } else if ($pos.parentOffset > 0) {
+          targetPos = Math.max($pos.start(), targetPos - 1)
+        }
+      } else {
+        targetPos = $pos.start()
       }
-    } else {
-      targetPos = $pos.start()
+    }
+
+    const tr = state.tr.setSelection(TextSelection.create(state.doc, targetPos))
+    dispatch(tr)
+  } else if (vimState.mode === 'visual' || vimState.mode === 'visual-line') {
+    // Collapse visual selection to normal cursor at selection start
+    const targetPos = state.selection.from
+    const tr = state.tr.setSelection(TextSelection.create(state.doc, targetPos))
+    dispatch(tr)
+  } else {
+    // Already in normal mode: do not move cursor, only collapse selection if non-empty
+    if (!state.selection.empty) {
+      const tr = state.tr.setSelection(TextSelection.create(state.doc, state.selection.from))
+      dispatch(tr)
     }
   }
 
-  const tr = state.tr.setSelection(TextSelection.create(state.doc, targetPos))
-  dispatch(tr)
   updateVimState({ mode: 'normal', visualAnchor: null, visualHead: null })
   resetBuffer()
 }

@@ -262,4 +262,37 @@ describe('Vim Actions & Operators', () => {
     expect(ctx.vimState.mode).toBe('normal')
     expect(ctx.state.doc.textContent).toBe('Line 3')
   })
+
+  it('does not move cursor when pressing Escape in normal mode', () => {
+    const ctx = createTestContext('Hello world', 5)
+    const mockEvent = (key: string) => ({ key, preventDefault: () => {} } as any)
+
+    expect(ctx.state.selection.from).toBe(5)
+
+    // Pressing Escape multiple times in normal mode must not change position
+    handleKeyDown(ctx, mockEvent('Escape'))
+    expect(ctx.state.selection.from).toBe(5)
+
+    handleKeyDown(ctx, mockEvent('Escape'))
+    expect(ctx.state.selection.from).toBe(5)
+  })
+
+  it('steps back one character when pressing Escape from insert mode', () => {
+    const ctx = createTestContext('Hello world', 5)
+    const mockEvent = (key: string) => ({ key, preventDefault: () => {} } as any)
+
+    // Enter insert mode with 'a' (advances to pos 6)
+    handleKeyDown(ctx, mockEvent('a'))
+    expect(ctx.vimState.mode).toBe('insert')
+    expect(ctx.state.selection.from).toBe(6)
+
+    // Press Escape to return to normal mode -> steps back to pos 5
+    handleKeyDown(ctx, mockEvent('Escape'))
+    expect(ctx.vimState.mode).toBe('normal')
+    expect(ctx.state.selection.from).toBe(5)
+
+    // Further Escape in normal mode stays at pos 5
+    handleKeyDown(ctx, mockEvent('Escape'))
+    expect(ctx.state.selection.from).toBe(5)
+  })
 })
