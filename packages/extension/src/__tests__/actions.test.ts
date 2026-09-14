@@ -22,9 +22,14 @@ const schema = new Schema({
 })
 
 function createTestContext(initialText: string, pos = 1): CommandContext {
-  const doc = schema.nodes.doc.create(null, [
-    schema.nodes.paragraph.create(null, initialText ? [schema.text(initialText)] : []),
-  ])
+  return createMultiLineContext([initialText], pos)
+}
+
+function createMultiLineContext(lines: string[], pos = 1): CommandContext {
+  const paragraphs = lines.map(line =>
+    schema.nodes.paragraph.create(null, line ? [schema.text(line)] : [])
+  )
+  const doc = schema.nodes.doc.create(null, paragraphs)
   let state = EditorState.create({
     doc,
     schema,
@@ -199,5 +204,62 @@ describe('Vim Actions & Operators', () => {
 
     handleKeyDown(ctx, mockEvent(','))
     expect(ctx.state.selection.from).toBe(2)
+  })
+
+  it('selects lines upwards with V -> k and handles j/k expansion and shrinking', () => {
+    // 3 lines:
+    // Line 1: [1, 7]
+    // Line 2: [9, 15]
+    // Line 3: [17, 23]
+    const ctx = createMultiLineContext(['Line 1', 'Line 2', 'Line 3'], 10)
+    const mockEvent = (key: string) => ({ key, preventDefault: () => {} } as any)
+
+    // Press 'V' to enter visual-line mode on Line 2
+    handleKeyDown(ctx, mockEvent('V'))
+    expect(ctx.vimState.mode).toBe('visual-line')
+    expect(ctx.state.selection.from).toBe(9)
+    expect(ctx.state.selection.to).toBe(15)
+
+    // Press 'k' to expand upwards to Line 1
+    handleKeyDown(ctx, mockEvent('k'))
+    expect(ctx.state.selection.from).toBe(1)
+    expect(ctx.state.selection.to).toBe(15)
+    // Selection direction should be backward (head at top)
+    expect(ctx.state.selection.head).toBe(1)
+    expect(ctx.state.selection.anchor).toBe(15)
+
+    // Press 'j' to shrink back down to Line 2
+    handleKeyDown(ctx, mockEvent('j'))
+    expect(ctx.state.selection.from).toBe(9)
+    expect(ctx.state.selection.to).toBe(15)
+
+    // Press 'j' again to expand downwards to Line 3
+    handleKeyDown(ctx, mockEvent('j'))
+    expect(ctx.state.selection.from).toBe(9)
+    expect(ctx.state.selection.to).toBe(23)
+    // Selection direction should be forward (head at bottom)
+    expect(ctx.state.selection.head).toBe(23)
+    expect(ctx.state.selection.anchor).toBe(9)
+
+    // Press 'k' to shrink back up to Line 2
+    handleKeyDown(ctx, mockEvent('k'))
+    expect(ctx.state.selection.from).toBe(9)
+    expect(ctx.state.selection.to).toBe(15)
+  })
+
+  it('deletes upward visual line selection with V -> k -> d', () => {
+    const ctx = createMultiLineContext(['Line 1', 'Line 2', 'Line 3'], 10)
+    const mockEvent = (key: string) => ({ key, preventDefault: () => {} } as any)
+
+    // Select Line 2 and Line 1
+    handleKeyDown(ctx, mockEvent('V'))
+    handleKeyDown(ctx, mockEvent('k'))
+    expect(ctx.state.selection.from).toBe(1)
+    expect(ctx.state.selection.to).toBe(15)
+
+    // Press 'd' to delete both lines
+    handleKeyDown(ctx, mockEvent('d'))
+    expect(ctx.vimState.mode).toBe('normal')
+    expect(ctx.state.doc.textContent).toBe('Line 3')
   })
 })

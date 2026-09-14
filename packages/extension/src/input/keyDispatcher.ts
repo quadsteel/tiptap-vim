@@ -444,7 +444,23 @@ function handleVisualKey(ctx: CommandContext, key: string, count: number): boole
     if (ctx.vimState.mode === 'visual-line') {
       exitToNormal(ctx)
     } else {
-      enterVisualMode(ctx, 'visual-line')
+      if (ctx.vimState.mode === 'visual') {
+        const anchor = ctx.vimState.visualAnchor ?? state.selection.anchor
+        const head = ctx.vimState.visualHead ?? state.selection.head
+        const $anchor = state.doc.resolve(anchor)
+        const $head = state.doc.resolve(head)
+        let tr
+        if ($head.start() >= $anchor.start()) {
+          tr = state.tr.setSelection(TextSelection.create(state.doc, $anchor.start(), $head.end()))
+        } else {
+          tr = state.tr.setSelection(TextSelection.create(state.doc, $anchor.end(), $head.start()))
+        }
+        ctx.dispatch(tr)
+        ctx.updateVimState({ mode: 'visual-line' })
+        ctx.resetBuffer()
+      } else {
+        enterVisualMode(ctx, 'visual-line')
+      }
     }
     return true
   }
@@ -455,7 +471,8 @@ function handleVisualKey(ctx: CommandContext, key: string, count: number): boole
 
 function dispatchMotion(ctx: CommandContext, key: string, count: number): boolean {
   const { state, view, vimState } = ctx
-  const currentPos = vimState.mode === 'visual'
+  const isVisual = vimState.mode === 'visual' || vimState.mode === 'visual-line'
+  const currentPos = isVisual
     ? (vimState.visualHead ?? state.selection.from)
     : (state.selection.head ?? state.selection.from)
 
@@ -496,15 +513,25 @@ function dispatchMotion(ctx: CommandContext, key: string, count: number): boolea
       nextColumn = null
       break
     case 'j': {
-      const res = moveDown(view, state, currentPos, count, vimState.desiredColumn)
-      targetPos = res.pos
-      nextColumn = res.column
+      if (vimState.mode === 'visual-line') {
+        targetPos = moveParagraphDown(state, currentPos, count)
+        nextColumn = null
+      } else {
+        const res = moveDown(view, state, currentPos, count, vimState.desiredColumn)
+        targetPos = res.pos
+        nextColumn = res.column
+      }
       break
     }
     case 'k': {
-      const res = moveUp(view, state, currentPos, count, vimState.desiredColumn)
-      targetPos = res.pos
-      nextColumn = res.column
+      if (vimState.mode === 'visual-line') {
+        targetPos = moveParagraphUp(state, currentPos, count)
+        nextColumn = null
+      } else {
+        const res = moveUp(view, state, currentPos, count, vimState.desiredColumn)
+        targetPos = res.pos
+        nextColumn = res.column
+      }
       break
     }
     case 'W':
@@ -573,10 +600,15 @@ function applyMotionPosition(ctx: CommandContext, targetPos: number, column: num
     const $anchor = state.doc.resolve(anchor)
     const $target = state.doc.resolve(targetPos)
 
-    const from = Math.min($anchor.start(), $target.start())
-    const to = Math.max($anchor.end(), $target.end())
+    let tr
+    if ($target.start() >= $anchor.start()) {
+      // Forward selection: anchor at top of anchor block, head at bottom of target block
+      tr = state.tr.setSelection(TextSelection.create(state.doc, $anchor.start(), $target.end()))
+    } else {
+      // Backward selection: anchor at bottom of anchor block, head at top of target block
+      tr = state.tr.setSelection(TextSelection.create(state.doc, $anchor.end(), $target.start()))
+    }
 
-    const tr = state.tr.setSelection(TextSelection.create(state.doc, from, to))
     dispatch(tr)
     updateVimState({ desiredColumn: column, visualHead: targetPos })
   } else {
