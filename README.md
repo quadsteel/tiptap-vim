@@ -2,26 +2,179 @@
 
 A modal Vim keybindings extension for [Tiptap](https://tiptap.dev/) and ProseMirror.
 
-## Features
+## Installation
 
-- **Modes**: Normal, Insert, Visual (character-wise), and Visual Line (block-wise) modes.
-- **Vim Block Cursor**: Native-feeling block cursor via ProseMirror decorations with suppressed browser caret in normal/visual modes.
+```bash
+npm install tiptap-extension-vim
+```
+
+```bash
+# Or with pnpm / yarn
+pnpm add tiptap-extension-vim
+yarn add tiptap-extension-vim
+```
+
+> **Important**: You must import the extension's stylesheet to enable the Vim block cursor and suppress the default browser text caret:
+> ```ts
+> import 'tiptap-extension-vim/style.css'
+> ```
+
+---
+
+## Quickstart
+
+### Vanilla JavaScript / TypeScript
+
+```ts
+import { Editor } from '@tiptap/core'
+import StarterKit from '@tiptap/starter-kit'
+import { Vim } from 'tiptap-extension-vim'
+
+// 1. Import cursor styles
+import 'tiptap-extension-vim/style.css'
+
+// 2. Initialize Tiptap with the Vim extension
+const editor = new Editor({
+  element: document.querySelector('#editor'),
+  extensions: [
+    StarterKit,
+    Vim.configure({
+      defaultMode: 'normal', // 'normal' | 'insert' (default: 'normal')
+    }),
+  ],
+})
+```
+
+### React (`@tiptap/react`)
+
+```tsx
+import React, { useState } from 'react'
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import { Vim } from 'tiptap-extension-vim'
+
+// Import cursor styles
+import 'tiptap-extension-vim/style.css'
+
+export function TipTapVimEditor() {
+  const [mode, setMode] = useState('normal')
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Vim.configure({
+        defaultMode: 'normal',
+      }),
+    ],
+    content: '<p>Hello from Vim in Tiptap!</p>',
+    onTransaction({ editor }) {
+      // Keep UI in sync with active Vim mode
+      setMode(editor.storage.vim.mode)
+    },
+  })
+
+  return (
+    <div className="editor-wrapper">
+      <div className="status-bar">
+        <span className={`badge mode-${mode}`}>-- {mode.toUpperCase()} --</span>
+      </div>
+      <EditorContent editor={editor} />
+    </div>
+  )
+}
+```
+
+---
+
+## Status Bar & UI Integration
+
+### Reading Vim State
+
+The extension stores reactive state inside `editor.storage.vim`:
+
+```ts
+const {
+  mode,       // 'normal' | 'insert' | 'visual' | 'visual-line'
+  keyBuffer,  // Pending input keys (e.g. "3", "d", "f")
+  count,      // Current parsed count multiplier (e.g. 3)
+  register,   // Current yank/cut register object { text, type: 'char' | 'line' }
+} = editor.storage.vim
+```
+
+To update your UI when the state changes:
+- **Vanilla JS**: Listen to `editor.on('transaction', () => ...)` or `editor.on('selectionUpdate', () => ...)`.
+- **React**: Update state in `onTransaction` or use `useEditorState`.
+- **Vue 3**: `editor.storage.vim.mode` is natively reactive in Vue templates: `{{ editor?.storage.vim.mode }}`.
+
+### Programmatic Mode Switching
+
+You can switch modes programmatically from buttons or commands:
+
+```ts
+// Switch to Insert mode
+editor.commands.setVimMode('insert')
+
+// Switch back to Normal mode
+editor.commands.setVimMode('normal')
+```
+
+### Styling with `data-vim-mode`
+
+The extension automatically applies a `data-vim-mode` attribute to the `.ProseMirror` container element. You can style the editor or external indicators purely with CSS:
+
+```css
+/* Custom border or glow based on mode */
+[data-vim-mode="normal"] {
+  border-color: #38bdf8; /* Blue for Normal */
+}
+
+[data-vim-mode="insert"] {
+  border-color: #4ade80; /* Green for Insert */
+}
+
+[data-vim-mode="visual"],
+[data-vim-mode="visual-line"] {
+  border-color: #fbbf24; /* Amber for Visual */
+}
+
+/* Custom cursor color customization */
+:root {
+  --vim-cursor-bg: #60a5fa;
+  --vim-cursor-fg: #0f172a;
+}
+```
+
+---
+
+## Features & Supported Motions
+
+- **Modes**:
+  - `Normal`: Block cursor, modal key navigation and operator execution.
+  - `Insert`: Standard typing. Return to normal with `<Esc>`, `Ctrl-[`, or `Ctrl-c`.
+  - `Visual`: Character-inclusive selection. Operators (`d`, `c`, `y`) operate on selection.
+  - `Visual Line`: Line/block-wise selection spanning whole blocks.
 - **Motions**:
-  - Character & line boundaries: `h`, `l`, `0`, `^`, `_`, `$`
-  - Word navigation: `w`, `b`, `e` (alphanumeric/symbol boundaries) and `W`, `B`, `E` (whitespace-delimited WORDs)
-  - In-line character search: `f{char}`, `F{char}` (find forward/back), `t{char}`, `T{char}` (till forward/back), `;` (repeat), `,` (reverse repeat)
-  - Bracket pair matching: `%` (jumps between matching `()`, `{}`, `[]`)
-  - Vertical & paragraph navigation: `j`, `k` (handles multi-line wrapped text and inter-block jumping), `{`, `}` (paragraph jump up/down)
-  - Document jumps: `gg`, `G`, and line numbers (e.g., `5gg`)
-  - Numeric repetition counts: `3w`, `5j`, `2dd`, `3fa`
+  - `h`, `j`, `k`, `l`: Left, down, up, right.
+  - `w`, `b`, `e`: Word start, backward word start, word end (crosses block boundaries).
+  - `W`, `B`, `E`: Whitespace-delimited WORD navigation.
+  - `0`, `^`, `_`, `$`: Line start, first non-blank char, line end.
+  - `f{char}`, `F{char}`: Jump forward/back to `{char}` on current line.
+  - `t{char}`, `T{char}`: Jump forward/back till `{char}`.
+  - `;`, `,`: Repeat last find motion in same/opposite direction.
+  - `%`: Jump to matching bracket pair (`()`, `{}`, `[]`).
+  - `{`, `}`: Jump backward/forward by paragraph.
+  - `gg`, `G`: Jump to start/end of document (or specific line with count e.g. `10gg`).
+  - `[count]`: Numeric prefixes supported on motions & operators (e.g. `3w`, `2W`, `5j`, `2dd`, `3fa`).
 - **Operators & Actions**:
-  - Deletion: `x`, `r<char>`, `d{motion}`, `dd`, `D`
-  - Change: `c{motion}`, `cc`, `C`, `s`, `S`
-  - Yank & Paste: `y{motion}`, `yy`, `p`, `P` (with internal register and clipboard sync)
-  - Insert transitions: `i`, `a`, `I`, `A`, `o`, `O`
-  - History: `u` (undo), `Ctrl-r` (redo)
-- **Visual Mode**: Character-inclusive selection ranges with operator execution (`d`, `c`, `y`).
-- **Reactive State**: Exposes `editor.storage.vim` (`mode`, `keyBuffer`, `register`, `count`) for status bar integrations.
+  - `x`: Delete character under cursor.
+  - `r{char}`: Replace character under cursor.
+  - `d{motion}` / `dd` / `D`: Delete motion range, current line, or to line end.
+  - `c{motion}` / `cc` / `C` / `s` / `S`: Change motion range, line, or char.
+  - `y{motion}` / `yy` / `Y`: Yank to register and system clipboard.
+  - `p` / `P`: Paste after or before cursor/line.
+  - `o` / `O`: Open new line below or above and enter Insert mode.
+  - `i` / `a` / `I` / `A`: Insert before/after cursor, at line start (`^`), or at line end (`$`).
+  - `u` / `Ctrl-r`: Undo / redo using Tiptap history.
 
 ## Repository Structure
 
