@@ -1,6 +1,6 @@
 {
   "name": "tiptap-extension-vim",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Vim modal editing extension for Tiptap and ProseMirror",
   "license": "MIT",
   "author": "quadsteel",
